@@ -72,8 +72,3 @@ knex('notes')
   });
 */
 
-knex('notes')
-.select()
-.then(results => {
-  console.log(JSON.stringify(results, null, 2));
-});
