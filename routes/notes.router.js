@@ -38,17 +38,19 @@ router.get('/notes', (req, res, next) => {
 
 // Get a single item
 router.get('/notes/:id', (req, res, next) => {
-  const id = req.params.id;
+  const { id } = req.params;
 
   knex
-    .select()
+    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName') // added folders.id and folders.name
     .from('notes')
-    .where({ 'id': id })
+    .leftJoin('folders', 'notes.folder_id', 'folders.id') // query to include the realted folder data in the results
+    .where({ 'notes.id': id })
     .then(item => {
-      if (item) {
-        res.json(item);
-      } else {
+      if (item.length === 0) {
+        res.status(404);
         next();
+      } else {
+        res.json(item[0]);
       }
     })
     .catch(err => {
