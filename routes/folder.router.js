@@ -79,7 +79,7 @@ router.post('/folders', (req, res, next) => {
 
   /***** Never trust users - validate input *****/
   if (!newFolder.name) {
-    const err = new Error('Missing `title` in request body');
+    const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
@@ -91,6 +91,22 @@ router.post('/folders', (req, res, next) => {
       if (item) {
         res.location(`http://${req.headers.host}/folders/${item.id}`).status(201).json(item);
       }
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
+// Delete  Folder by Id accepts an ID and deletes the folder from the DB and then returns a 204 status
+router.delete('/folders/:id', (req, res, next) => {
+  const id = req.params.id;
+
+  knex('folders')
+    .select()
+    .where({ 'id': id })
+    .del()
+    .then(() => {
+      res.sendStatus(204);
     })
     .catch(err => {
       next(err);

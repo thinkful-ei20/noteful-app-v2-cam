@@ -30,6 +30,7 @@ INSERT INTO notes (title, content, folder_id) VALUES
     100
   );
 
+/*
 -- get all notes with folders
 SELECT * FROM notes
 INNER JOIN folders ON notes.folder_id = folders.id;
@@ -42,3 +43,4 @@ LEFT JOIN folders ON notes.folder_id = folders.id;
 SELECT * FROM notes
 LEFT JOIN folders ON notes.folder_id = folders.id
 WHERE notes.id = 1005;
+*/

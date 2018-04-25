@@ -11,13 +11,20 @@ const knex = require('../knex');
 // Get All (and search by query)
 router.get('/notes', (req, res, next) => {
   const { searchTerm } = req.query;
+  const { folderId } = req.query;
 
   knex
-    .select('notes.id', 'title', 'content')
+    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName') // added folders.id and folders.name
     .from('notes')
+    .leftJoin('folders', 'notes.folder_id', 'folders.id') // query to include the realted folder data in the results
     .modify(queryBuilder => {
       if (searchTerm) {
         queryBuilder.where('title', 'like', `%${searchTerm}%`);
+      }
+    })
+    .modify(queryBuilder => {
+      if (folderId) {
+        queryBuilder.where('folder_id', folderId);
       }
     })
     .orderBy('notes.id')
