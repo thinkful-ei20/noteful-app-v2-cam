@@ -1,12 +1,9 @@
 'use strict';
 
 const express = require('express');
-
-// Create an router instance (aka "mini-app")
 const router = express.Router();
-
-// IMPORT DATABASE
 const knex = require('../knex');
+const hydrateNotes = require('../utils/hydrateNotes');
 
 // Get All (and search by query)
 router.get('/notes', (req, res, next) => {
@@ -31,7 +28,12 @@ router.get('/notes', (req, res, next) => {
     })
     .orderBy('notes.id')
     .then(results => {
-      res.json(results);
+      if (results) {
+        const hydrated = hydrateNotes(results);
+        res.json(results);
+      } else {
+        next();
+      }
     })
     .catch(err => {
       next(err);
