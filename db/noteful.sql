@@ -79,3 +79,19 @@ SELECT title, tags.name, folders.name FROM notes
 INNER JOIN folders ON notes.folder_id = folders.id
 INNER JOIN notes_tags ON notes.id = notes_tags.note_id
 INNER JOIN tags ON notes_tags.tag_id = tags.id;
+
+/*
+'notes.id', 
+'title', 
+'content', 
+'folders.id as folder_id', 
+'folders.name as folderName', 
+'notes.id as notes_tags.note_id', 
+'notes_tags.tag_id as tags.id'
+*/
+
+SELECT title, folders.name, tags.name FROM notes
+LEFT JOIN folders ON notes.folder_id = folders.id
+LEFT JOIN  notes_tags ON notes.id = notes_tags.note_id
+LEFT JOIN tags ON notes_tags.tag_id = tags.id;
+

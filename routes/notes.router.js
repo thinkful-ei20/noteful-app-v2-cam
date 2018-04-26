@@ -14,9 +14,11 @@ router.get('/notes', (req, res, next) => {
   const { folderId } = req.query;
 
   knex
-    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName') // added folders.id and folders.name
+    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName', 'tags.id as tagId', 'tags.name as tagName')
     .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id') // query to include the realted folder data in the results
+    .leftJoin('folders', 'notes.folder_id', 'folders.id')
+    .leftJoin('notes_tags', 'notes.id', 'notes_tags.tag_id')
+    .leftJoin('tags', 'tags.id', 'notes_tags.tag_id')
     .modify(queryBuilder => {
       if (searchTerm) {
         queryBuilder.where('title', 'like', `%${searchTerm}%`);
@@ -41,9 +43,11 @@ router.get('/notes/:id', (req, res, next) => {
   const { id } = req.params;
 
   knex
-    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName') // added folders.id and folders.name
+    .select('notes.id', 'title', 'content', 'folders.id as folder_id', 'folders.name as folderName', 'tags.id as tagId', 'tags.name as tagName')
     .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id') // query to include the realted folder data in the results
+    .leftJoin('folders', 'notes.folder_id', 'folders.id')
+    .leftJoin('notes_tags', 'notes.id', 'notes_tags.tag_id')
+    .leftJoin('tags', 'tags.id', 'notes_tags.tag_id')
     .where({ 'notes.id': id })
     .then(item => {
       if (item.length === 0) {
