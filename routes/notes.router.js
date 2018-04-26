@@ -109,8 +109,7 @@ router.put('/notes/:id', (req, res, next) => {
 router.post('/notes', (req, res, next) => {
   const { title, content, folder_id, tags } = req.body; // Add 'folder_id' to object destructure
 
-  const newItem = { title, content, folder_id }; // Add 'folder_id'
-
+  const newItem = { title, content, folder_id }; 
   let noteId;
 
   /***** Never trust users - validate input *****/
@@ -137,7 +136,7 @@ router.post('/notes', (req, res, next) => {
         .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name', 'tags.id as tagId', 'tags.name as tagName')
         .from('notes')
         .leftJoin('folders', 'notes.folder_id', 'folders.id')
-        .leftJoin('notes_tags', 'notes.id', 'notes_tags.tag_id')
+        .leftJoin('notes_tags', 'notes.id', 'notes_tags.note_id')
         .leftJoin('tags', 'tags.id', 'notes_tags.tag_id')
         .where('notes.id', noteId);
     })
