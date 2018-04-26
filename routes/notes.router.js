@@ -64,7 +64,7 @@ router.put('/notes/:id', (req, res, next) => {
 
   /***** Never trust users - validate input *****/
   const updateObj = {};
-  const updateableFields = ['title', 'content'];
+  const updateableFields = ['title', 'content', 'folder_id'];
 
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -83,7 +83,7 @@ router.put('/notes/:id', (req, res, next) => {
     .select()
     .where({ 'id': id })
     .update(updateObj)
-    .returning(['title', 'content'])
+    .returning(['title', 'content', 'folder_id'])
     .then(item => {
       if (item) {
         res.json(item);
@@ -98,9 +98,12 @@ router.put('/notes/:id', (req, res, next) => {
 
 // Post (insert) an item
 router.post('/notes', (req, res, next) => {
-  const { title, content } = req.body;
+  const { title, content, folder_id } = req.body; // Add 'folder_id' to object destructure
 
-  const newItem = { title, content };
+  const newItem = { title, content, folder_id }; // Add 'folder_id'
+
+  let noteId;
+
   /***** Never trust users - validate input *****/
   if (!newItem.title) {
     const err = new Error('Missing `title` in request body');
@@ -108,17 +111,24 @@ router.post('/notes', (req, res, next) => {
     return next(err);
   }
 
-  knex('notes')
-    .insert([{ title, content }])
-    .returning(['id', 'title', 'content'])
-    .then(item => {
-      if (item) {
-        res.location(`http://${req.headers.host}/notes/${item.id}`).status(201).json(item);
-      }
+  // insert new note, instead of returning all the fields, just return the new 'id'
+  knex
+    .insert(newItem)
+    .into('notes')
+    .returning('id')
+    .then( ([id]) => {
+      noteId =  id;
+      
+      return knex
+        .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
+        .from('notes')
+        .leftJoin('folders', 'notes.folder_id', 'folders.id')
+        .where('notes.id', noteId);
     })
-    .catch(err => {
-      next(err);
-    });
+    .then( ([result]) => {
+      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+    })
+    .catch(err => next(err));
 });
 
 // Delete an item
