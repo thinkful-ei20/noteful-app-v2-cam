@@ -100,19 +100,15 @@ router.post('/tags', (req, res, next) => {
 });
 
 // DELETE
-router.delete('/tags/:id', (req, res, next) => {
-  const id = req.params.id;
+router.delete('/tags/:id', (req,res,next)=>{
+  const {id} = req.params;
 
   knex('tags')
-    .select()
-    .where({ 'id': id })
+    .where('tags.id', id)
     .del()
-    .then(() => {
-      res.sendStatus(204);
-    })
-    .catch(err => {
-      next(err);
-    });
+    .then(res.sendStatus(204))
+    .catch(err => next(err));
 });
+
 
 module.exports = router;
