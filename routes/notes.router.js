@@ -96,7 +96,7 @@ router.put('/notes/:id', (req, res, next) => {
     .where({ 'id': id })
     .update(updateObj)
     .returning(['title', 'content', 'folder_id'])
-    .then(item => {
+    .then( () => {
       let noteId = id;
 
       // Delete current related tags from notes_tags table
