@@ -33,16 +33,12 @@ describe('Environment', () => {
     expect(process.env.NODE_ENV).to.equal('test');
   });
 
-  it('connection should be test database', () => {
-    expect(knex.client.connectionSettings.database).to.equal('noteful-test');
-  });
-
 });
 
-describe('Noteful Test', function () {
+describe('Noteful App', function () {
 
   beforeEach(function () {
-    return seedData('./db/noteful.sql', 'dev');
+    return seedData('./db/noteful.sql');
   });
 
   after(function () {
@@ -60,7 +56,6 @@ describe('Noteful Test', function () {
           expect(res).to.be.html;
         });
     });
-
   });
 
   describe('404 handler', function () {
@@ -72,19 +67,23 @@ describe('Noteful Test', function () {
           expect(res).to.have.status(404);
         });
     });
-
   });
 
   describe('GET /api/notes', function () {
 
-    it('should return the default of 10 Notes ', function () {
-      return chai.request(app)
-        .get('/api/notes')
+    it('should return the default of 10 Notes', function () {
+      let count;
+      return knex.count()
+        .from('notes')
+        .then(([result]) => {
+          count = Number(result.count);
+          return chai.request(app).get('/api/notes');
+        })
         .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(10);
+          expect(res.body).to.have.length(count);
         });
     });
 
@@ -103,15 +102,39 @@ describe('Noteful Test', function () {
         });
     });
 
+    it('should return correct notes', function () {
+      const dataPromise = knex.first()
+        .from('notes')
+        .where('id', 1000);
+
+      const apiPromise = chai.request(app)
+        .get('/api/notes/1000');
+
+      return Promise.all([dataPromise, apiPromise])
+        .then(function ([data, res]) {
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.an('object');
+          expect(res.body).to.include.keys('id', 'title', 'content');
+          expect(res.body.id).to.equal(1000);
+          expect(res.body.title).to.equal(data.title);
+        });
+    });
+
     it('should return correct search results for a valid query', function () {
-      return chai.request(app)
-        .get('/api/notes?searchTerm=about%20cats')
-        .then(function (res) {
+      let res;
+      return chai.request(app).get('/api/notes?searchTerm=gaga')
+        .then(function (_res) {
+          res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(4);
+          expect(res.body).to.have.length(1);
           expect(res.body[0]).to.be.an('object');
+          return knex.select().from('notes').where('title', 'like', '%gaga%');
+        })
+        .then(data => {
+          expect(res.body[0].id).to.equal(data[0].id);
         });
     });
 
@@ -158,20 +181,25 @@ describe('Noteful Test', function () {
     it('should create and return a new item when provided valid data', function () {
       const newItem = {
         'title': 'The best article about cats ever!',
-        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...'
+        'content': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor...',
+        'tags': []
       };
+      let body;
       return chai.request(app)
         .post('/api/notes')
         .send(newItem)
         .then(function (res) {
+          body = res.body;
           expect(res).to.have.status(201);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('object');
-          expect(res.body).to.include.keys('id', 'title', 'content');
-
-          expect(res.body.title).to.equal(newItem.title);
-          expect(res.body.content).to.equal(newItem.content);
           expect(res).to.have.header('location');
+          expect(res).to.be.json;
+          expect(body).to.be.a('object');
+          expect(body).to.include.keys('id', 'title', 'content');
+          return knex.select().from('notes').where('id', body.id);
+        })
+        .then(([data]) => {
+          expect(body.title).to.equal(data.title);
+          expect(body.content).to.equal(data.content);
         });
     });
 

@@ -76,7 +76,7 @@ router.put('/notes/:id', (req, res, next) => {
   /***** Never trust users - validate input *****/
   const updateObj = {};
   const updateableFields = ['title', 'content', 'folder_id'];
-  const updatedTags = (req.body.tags) ? req.body.tags : null;
+  const updatedTags = (req.body.tags) ? req.body.tags : [];
 
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -126,7 +126,7 @@ router.put('/notes/:id', (req, res, next) => {
         next();
       } else if (results) {
         const hydrated = hydrateNotes(results);
-        res.json(results[0]).sendStatus(200);
+        res.json(hydrated[0]).sendStatus(200);
       } else {
         next();
       }
@@ -138,7 +138,7 @@ router.put('/notes/:id', (req, res, next) => {
 
 // Post (insert) an item
 router.post('/notes', (req, res, next) => {
-  const { title, content, folder_id, tags } = req.body; // Add 'folder_id' to object destructure
+  const { title, content, folder_id, tags = [] } = req.body; // Add 'folder_id' to object destructure
 
   const newItem = { title, content, folder_id }; 
   let noteId;
@@ -150,11 +150,11 @@ router.post('/notes', (req, res, next) => {
     return next(err);
   }
 
-  // insert new note, instead of returning all the fields, just return the new 'id'
+  // insert new note
   knex
     .insert(newItem)
     .into('notes')
-    .returning('id')
+    .returning('id', 'content', 'folder_id')
     .then( ([id]) => {
       // Insert related tags into notes_tags table
       noteId = id;
@@ -174,7 +174,8 @@ router.post('/notes', (req, res, next) => {
     .then(results => {
       if (results) {
         const hydrated = hydrateNotes(results)[0];
-        res.location(`${req.originalUrl}/${results.id}`).status(201).json(results);
+        // console.log(hydrated);
+        res.location(`${req.originalUrl}/${results.id}`).status(201).json(hydrated);
       } else {
         next();
       }
